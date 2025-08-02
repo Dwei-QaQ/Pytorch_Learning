@@ -4,34 +4,359 @@
 
 PyTorch 文档: [https://pytorch.org/docs/stable/index.html](https://pytorch.org/docs/stable/index.html)
 
+本文的基础是已经完成了 PyTorch 的安装以及其他环境的配置，安装教程请参考 [PyTorch 安装](https://pytorch.org/get-started/locally/)。
+
+遇到不会的操作可以多参考官方文档和教程，同时可以在vscode里直接查询相关函数定义与用法。
+
+欢迎与作者交流沟通！WELCOME TO COMMUNICATE WITH THE AUTHOR!
+
 ## 1.PyTorch 基础学习内容
 
 PyTorch 是一个开源的 Python 机器学习库，基于 Torch，用于自然语言处理等应用程序。以下是 PyTorch 的基础学习内容：
 
-### 1.1 PyTorch 基础概念
+### 1.1 张量基础概念
 
-   -张量 (Tensors): PyTorch 的基本数据结构，类似于 NumPy 的 ndarray，但可以在 GPU 上运行,张量可以看作是多维数组，其维度（dim）称为轴（axis）或阶（rank）
+   -张量 (Tensors): PyTorch 的基本数据结构，与数组和矩阵非常相似，类似于 NumPy 的 ndarray，但可以在 GPU 上运行,张量可以看作是多维数组，其维度（dim）称为轴（axis）或阶（rank），在 PyTorch 中，我们使用张量来编码模型的输入和输出，以及模型的参数。实际上，张量和 NumPy 数组通常可以共享底层内存，从而无需复制数据。
 
    -自动微分 (Autograd): PyTorch 的自动微分引擎，用于神经网络训练
 
    -计算图 (Computational Graph): PyTorch 使用动态计算图，也称为 define-by-run 框架
 
-### 1.2 张量操作
-
 ```python
 import torch
+import numpy as np
 
-# 创建张量
-x = torch.empty(5, 3)                      # 未初始化的张量
-x = torch.rand(5, 3)                       # 随机初始化的张量
-x = torch.zeros(5, 3, dtype=torch.long)    # 全零张量
-x = torch.tensor([5.5, 3])                 # 从数据创建张量
+```
 
-# 张量加法
-# 示例1：相同形状
-x = torch.rand(5, 3)
-y = torch.rand(5, 3)
-print(x + y)  # 可以正常相加
+### 1.2 初始化张量
+
+张量可以通过多种方式进行初始化。
+
+#### 1.2.1 直接从数据创建
+
+张量可以直接从数据创建。数据类型会自动推断。
+
+```python
+data = [[1, 2],[3, 4]]
+x_data = torch.tensor(data)
+print(f"Tensor: \n {x_data} \n")
+
+```
+
+输出：
+
+```bash
+Tensor: 
+ tensor([[1, 2],
+        [3, 4]]) 
+
+```
+
+#### 1.2.2 从 NumPy 数组创建
+
+张量可以从 NumPy 数组创建（反之亦然）。
+
+```python
+np_array = np.array(data)
+x_np = torch.from_numpy(np_array)
+
+```
+
+#### 1.2.3 从另一个张量创建
+
+新张量会保留参数张量的属性（形状、数据类型），除非显式覆盖。
+
+```python
+x_ones = torch.ones_like(x_data) # retains the properties of x_data
+print(f"Ones Tensor: \n {x_ones} \n")
+
+x_rand = torch.rand_like(x_data, dtype=torch.float) # overrides the datatype of x_data
+print(f"Random Tensor: \n {x_rand} \n")
+
+```
+
+输出：
+
+```bash
+Ones Tensor:
+ tensor([[1, 1],
+        [1, 1]])
+//强制转换为每一位为1的张量
+
+Random Tensor: 
+ tensor([[0.7812, 0.1073],
+        [0.0350, 0.0997]]) 
+//强制转换为每一位为随机浮点数的张量
+
+```
+
+#### 1.2.4 使用随机值或常量值创建
+
+shape 是一个张量维度的元组。在下面的函数中，它决定了输出张量的维度。
+
+```python
+shape = (2,3,)
+rand_tensor = torch.rand(shape)
+ones_tensor = torch.ones(shape)
+zeros_tensor = torch.zeros(shape)
+
+print(f"Random Tensor: \n {rand_tensor} \n")
+print(f"Ones Tensor: \n {ones_tensor} \n")
+print(f"Zeros Tensor: \n {zeros_tensor}")
+
+```
+
+输出：
+
+```bash
+//shape = (2,3,)输出两行三列的张量
+Random Tensor: 
+ tensor([[0.6068, 0.9242, 0.4634],
+        [0.6015, 0.0042, 0.9946]]) 
+
+Ones Tensor: 
+ tensor([[1., 1., 1.],
+        [1., 1., 1.]]) 
+
+Zeros Tensor: 
+ tensor([[0., 0., 0.],
+        [0., 0., 0.]])
+```
+
+### 1.3 张量的属性
+
+张量属性描述了它们的形状、数据类型以及存储它们的设备。
+
+```python
+tensor = torch.rand(3,4)
+
+print(f"Shape of tensor: {tensor.shape}")
+print(f"Datatype of tensor: {tensor.dtype}")
+print(f"Device tensor is stored on: {tensor.device}")
+```
+
+输出：
+
+```bash
+Shape of tensor: torch.Size([3, 4])
+Datatype of tensor: torch.float32
+Device tensor is stored on: cpu
+```
+
+### 1.4 张量操作
+
+超过 1200 种张量操作，包括算术、线性代数、矩阵操作（转置、索引、切片）、采样等等，都在[此页面](https://pytorch.ac.cn/docs/stable/torch.html)进行了全面描述。
+
+这些操作都可以在 CPU 和 加速器上运行，例如 CUDA、MPS、MTIA 或 XPU。如果您使用 Colab，可以通过前往“运行时”>“更改运行时类型”>“GPU”来分配一个加速器。
+
+默认情况下，张量在 CPU 上创建。我们需要使用 .to 方法（在检查加速器可用性后）将张量显式移动到加速器上。请记住，在设备之间复制大型张量可能会消耗大量时间和内存！
+
+```python
+# We move our tensor to the current accelerator if available
+if torch.accelerator.is_available():
+    tensor = tensor.to(torch.accelerator.current_accelerator())
+    
+```
+
+#### 1.4.1 标准的 NumPy 式索引和切片
+
+```python
+tensor = torch.ones(4, 4)
+print(f"First row: {tensor[0]}")
+print(f"First column: {tensor[:, 0]}")
+print(f"Last column: {tensor[..., -1]}")
+tensor[:,1] = 0
+print(tensor)
+
+```
+
+输出：
+
+```bash
+First row:  tensor([1., 1., 1., 1.])
+First column:  tensor([1., 1., 1., 1.])
+Last column: tensor([1., 1., 1., 1.])
+tensor([[1., 0., 1., 1.],
+        [1., 0., 1., 1.],
+        [1., 0., 1., 1.],
+        [1., 0., 1., 1.]])
+        
+```
+
+#### 1.4.2 连接张量
+
+可以使用 torch.cat 沿着给定维度连接一系列张量。
+
+```python
+t1 = torch.cat([tensor, tensor, tensor], dim=1)
+print(t1)
+
+```
+
+输出：
+
+```bash
+tensor([[1., 0., 1., 1., 1., 0., 1., 1., 1., 0., 1., 1.],
+        [1., 0., 1., 1., 1., 0., 1., 1., 1., 0., 1., 1.],
+        [1., 0., 1., 1., 1., 0., 1., 1., 1., 0., 1., 1.],
+        [1., 0., 1., 1., 1., 0., 1., 1., 1., 0., 1., 1.]])
+
+```
+
+```bash
+官方文档
+Example:
+
+    >>> x = torch.randn(2, 3)
+    >>> x
+    tensor([[ 0.6580, -1.0969, -0.4614],
+            [-0.1034, -0.5790,  0.1497]])
+    >>> torch.cat((x, x, x), 0)
+    tensor([[ 0.6580, -1.0969, -0.4614],
+            [-0.1034, -0.5790,  0.1497],
+            [ 0.6580, -1.0969, -0.4614],
+            [-0.1034, -0.5790,  0.1497],
+            [ 0.6580, -1.0969, -0.4614],
+            [-0.1034, -0.5790,  0.1497]])
+    >>> torch.cat((x, x, x), 1)
+    tensor([[ 0.6580, -1.0969, -0.4614,  0.6580, -1.0969, -0.4614,  0.6580,
+             -1.0969, -0.4614],
+            [-0.1034, -0.5790,  0.1497, -0.1034, -0.5790,  0.1497, -0.1034,
+             -0.5790,  0.1497]])
+
+```
+
+torch.stack连接
+
+```python
+t2 = torch.stack([tensor, tensor, tensor], dim=1)
+print(t2)
+
+```
+
+输出：
+
+```bash
+tensor([[[1., 0., 1., 1.],
+         [1., 0., 1., 1.],
+         [1., 0., 1., 1.]],
+
+        [[1., 0., 1., 1.],
+         [1., 0., 1., 1.],
+         [1., 0., 1., 1.]],
+
+        [[1., 0., 1., 1.],
+         [1., 0., 1., 1.],
+         [1., 0., 1., 1.]],
+
+        [[1., 0., 1., 1.],
+         [1., 0., 1., 1.],
+         [1., 0., 1., 1.]]])
+//与torch.cat相比这个会增加维度
+
+```
+
+#### 1.4.3 算数运算
+
+```python
+# This computes the matrix multiplication between two tensors. y1, y2, y3 will have the same value
+# ``tensor.T`` returns the transpose of a tensor
+y1 = tensor @ tensor.T
+y2 = tensor.matmul(tensor.T)
+
+y3 = torch.rand_like(y1)
+torch.matmul(tensor, tensor.T, out=y3)
+print(y3)
+print(f"{y1} \n{y2} \n{y3} \n ")
+
+# This computes the element-wise product. z1, z2, z3 will have the same value
+z1 = tensor * tensor
+z2 = tensor.mul(tensor)
+
+z3 = torch.rand_like(tensor)
+torch.mul(tensor, tensor, out=z3)
+print(f"{z1} \n{z2} \n{z3} \n ")
+
+```
+
+输出：
+
+```bash
+tensor([[3., 3., 3., 3.],
+        [3., 3., 3., 3.],
+        [3., 3., 3., 3.],
+        [3., 3., 3., 3.]]) 
+tensor([[3., 3., 3., 3.],
+        [3., 3., 3., 3.],
+        [3., 3., 3., 3.],
+        [3., 3., 3., 3.]]) 
+tensor([[3., 3., 3., 3.],
+        [3., 3., 3., 3.],
+        [3., 3., 3., 3.],
+        [3., 3., 3., 3.]]) 
+ 
+tensor([[1., 0., 1., 1.],
+        [1., 0., 1., 1.],
+        [1., 0., 1., 1.],
+        [1., 0., 1., 1.]]) 
+tensor([[1., 0., 1., 1.],
+        [1., 0., 1., 1.],
+        [1., 0., 1., 1.],
+        [1., 0., 1., 1.]]) 
+tensor([[1., 0., 1., 1.],
+        [1., 0., 1., 1.],
+        [1., 0., 1., 1.],
+        [1., 0., 1., 1.]]) 
+
+```
+
+#### 1.4.4 单元素张量
+
+如果您有一个单元素张量，例如通过将张量的所有值聚合到一个值中获得，您可以使用 item() 将其转换为 Python 数值。
+
+```python
+agg = tensor.sum()
+agg_item = agg.item()
+print(agg_item, type(agg_item))
+
+```
+
+输出：
+
+```bash
+12.0 <class 'float'>
+
+```
+
+#### 1.4.5 就地操作
+
+将结果存储到操作数中的操作称为就地操作。它们以_后缀表示。例如：x.copy_(y)、x.t_() 会改变 x。
+
+```python
+print(f"{tensor} \n")
+tensor.add_(5)
+print(tensor)
+
+```
+
+输出：
+
+```bash
+tensor([[1., 0., 1., 1.],
+        [1., 0., 1., 1.],
+        [1., 0., 1., 1.],
+        [1., 0., 1., 1.]])
+
+tensor([[6., 5., 6., 6.],
+        [6., 5., 6., 6.],
+        [6., 5., 6., 6.],
+        [6., 5., 6., 6.]])
+
+```
+
+就地操作节省了一些内存，但在计算导数时可能会有问题，因为会立即丢失历史记录。因此，不建议使用它们。
+
+```python
 
 # 示例2：可广播的形状
 x = torch.tensor([1.0, 2.0, 3.0])  # 形状 (3,)
