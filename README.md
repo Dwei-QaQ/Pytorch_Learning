@@ -356,6 +356,8 @@ tensor([[6., 5., 6., 6.],
 
 就地操作节省了一些内存，但在计算导数时可能会有问题，因为会立即丢失历史记录。因此，不建议使用它们。
 
+#### 1.4.5 形状广播
+
 ```python
 
 # 示例2：可广播的形状
@@ -373,7 +375,7 @@ y = x.view(16)  # 展平
 z = x.view(-1, 8)  # -1 表示自动计算该维度大小
 ```
 
-### 1.3  自动微分 (Autograd)
+### 1.5  自动微分 (Autograd)
 
 ```python
 # 创建一个张量并设置 requires_grad=True 来跟踪计算
@@ -391,7 +393,7 @@ out.backward()
 print(x.grad)
 ```
 
-### 1.4 神经网络 (Neural Networks)基础
+### 1.6 神经网络 (Neural Networks)基础
 
 PyTorch 提供了 torch.nn 模块来构建神经网络
 
