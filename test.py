@@ -66,3 +66,41 @@ print(agg_item, type(agg_item))
 print(f"{tensor} \n")
 tensor.add_(5)
 print(tensor)
+
+x = torch.tensor([1.0, 2.0, 3.0])  
+y = torch.rand(5, 3)               
+print(x + y)  
+
+print(x.shape)  
+print(y.shape)  
+
+a = torch.randn(4, 4)
+b = a.view(16)                      
+c = a.view(-1, 8)                   
+print(f"{a} \n{b} \n{c} \n ")
+
+t = torch.ones(5)
+print(f"t: {t}")
+n = t.numpy()
+print(f"n: {n}")
+
+n = np.ones(5)
+t = torch.from_numpy(n)
+
+np.add(n, 1, out=n)
+print(f"t: {t}")
+print(f"n: {n}")
+
+# 创建一个张量并设置 requires_grad=True 来跟踪计算
+x = torch.ones(2, 2, requires_grad=True)
+
+# 执行一个张量操作
+y = x + 2
+z = y * y * 3
+out = z.mean()
+
+# 反向传播
+out.backward()
+
+# 打印梯度 d(out)/dx
+print(x.grad)

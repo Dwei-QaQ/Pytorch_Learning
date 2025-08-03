@@ -1,5 +1,9 @@
 # PyTorch_Learning
 
+本文大量参考PyTorch官方文档和教程，但是额外加了一些例子和注释，方便理解。
+
+以下是几个重要链接：
+
 官方教程: [https://pytorch.org/tutorials/](https://pytorch.org/tutorials/)
 
 PyTorch 文档: [https://pytorch.org/docs/stable/index.html](https://pytorch.org/docs/stable/index.html)
@@ -356,41 +360,96 @@ tensor([[6., 5., 6., 6.],
 
 就地操作节省了一些内存，但在计算导数时可能会有问题，因为会立即丢失历史记录。因此，不建议使用它们。
 
-#### 1.4.5 形状广播
+#### 1.4.5 形状广播和改变
 
 ```python
 
-# 示例2：可广播的形状
+# 广播形状
 x = torch.tensor([1.0, 2.0, 3.0])  # 形状 (3,)
 y = torch.rand(5, 3)               # 形状 (5, 3)
-print(x + y)  # x会被广播为(5,3)
+print(x + y)                       # x会被广播为(5,3)
 
-print(x.shape)  # 添加这行查看x的形状
-print(y.shape)  # 添加这行查看y的形状
-print(x + y)
+print(x.shape)                     # 添加这行查看x的形状
+print(y.shape)                     # 添加这行查看y的形状
 
 # 改变形状
-x = torch.randn(4, 4)
-y = x.view(16)  # 展平
-z = x.view(-1, 8)  # -1 表示自动计算该维度大小
+a = torch.randn(4, 4)
+b = a.view(16)                      # 将 a 的形状改变为 (16,)
+c = a.view(-1, 8)                   # -1 表示自动计算该维度大小
+print(f"{a} \n{b} \n{c} \n ")
+
 ```
 
-### 1.5  自动微分 (Autograd)
+输出：
+
+```bash
+tensor([[1.0405, 2.5298, 3.3739],
+        [1.2869, 2.6964, 3.7740],
+        [1.1309, 2.9418, 3.5148],
+        [1.9281, 2.7551, 3.3660],
+        [1.1602, 2.4478, 3.6667]])
+//相当于把x广播为5行3列的张量
+
+torch.Size([3])
+torch.Size([5, 3])
+tensor([[-0.8745,  0.5820, -0.2385, -0.7005],
+        [ 0.4052,  1.9969, -0.0108,  0.9123],
+        [-1.3900, -1.4591,  0.7331,  0.3289],
+        [-0.4143,  1.4008,  0.1410,  1.3530]]) 
+tensor([-0.8745,  0.5820, -0.2385, -0.7005,  0.4052,  1.9969, -0.0108,  0.9123,
+        -1.3900, -1.4591,  0.7331,  0.3289, -0.4143,  1.4008,  0.1410,  1.3530]) 
+tensor([[-0.8745,  0.5820, -0.2385, -0.7005,  0.4052,  1.9969, -0.0108,  0.9123],
+        [-1.3900, -1.4591,  0.7331,  0.3289, -0.4143,  1.4008,  0.1410,  1.3530]]) 
+
+```
+
+### 1.5 与 NumPy 的桥接
+
+CPU 上的张量和 NumPy 数组可以共享其底层内存位置，改变其中一个会改变另一个。
+
+### 1.6.1 张量转 NumPy 数组
 
 ```python
-# 创建一个张量并设置 requires_grad=True 来跟踪计算
-x = torch.ones(2, 2, requires_grad=True)
+t = torch.ones(5)
+print(f"t: {t}")
+n = t.numpy()
+print(f"n: {n}")
 
-# 执行一个张量操作
-y = x + 2
-z = y * y * 3
-out = z.mean()
+```
 
-# 反向传播
-out.backward()
+输出：
 
-# 打印梯度 d(out)/dx
-print(x.grad)
+```bash
+t: tensor([1., 1., 1., 1., 1.])
+n: [1. 1. 1. 1. 1.]
+
+```
+
+张量中的改变会反映在 NumPy 数组中。
+
+### 1.5.2 NumPy 数组转张量
+
+```python
+n = np.ones(5)
+t = torch.from_numpy(n)
+
+```
+
+NumPy 数组中的改变会反映在张量中。
+
+```python
+np.add(n, 1, out=n)
+print(f"t: {t}")
+print(f"n: {n}")
+
+```
+
+输出：
+
+```bash
+t: tensor([2., 2., 2., 2., 2.], dtype=torch.float64)
+n: [2. 2. 2. 2. 2.]
+
 ```
 
 ### 1.6 神经网络 (Neural Networks)基础
