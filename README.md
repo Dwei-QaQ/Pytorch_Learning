@@ -650,7 +650,63 @@ print(f"Label: {label}")
 
 ```
 
-### 1.6 神经网络 (Neural Networks)基础
+## 3.变换
+
+数据并不总是以机器学习算法训练所需的最终处理形式出现。我们使用 变换（transforms） 对数据进行一些处理，使其适合训练。
+
+所有 TorchVision 数据集都有两个参数 -transform 用于修改特征，target_transform 用于修改标签 - 它们接受包含变换逻辑的可调用对象。 torchvision.transforms 模块提供了几个常用的现成变换。
+
+FashionMNIST 特征采用 PIL Image 格式，标签是整数。为了训练，我们需要将特征转换为归一化张量，将标签转换为独热编码张量。为了实现这些变换，我们使用 ToTensor 和 Lambda。
+
+```python
+import torch
+from torchvision import datasets
+from torchvision.transforms import ToTensor, Lambda
+
+ds = datasets.FashionMNIST(
+    root="data",
+    train=True,
+    download=True,
+    transform=ToTensor(),
+    target_transform=Lambda(lambda y: torch.zeros(10, dtype=torch.float).scatter_(0, torch.tensor(y), value=1))
+)
+
+```
+
+### 3.1 ToTensor()
+
+ToTensor 将 PIL 图像或 NumPy ndarray 转换为 FloatTensor，并将图像的像素强度值缩放到 [0., 1.] 范围内。
+
+### 3.2 Lambda 变换
+
+Lambda 变换应用任何用户定义的 lambda 函数。在这里，我们定义了一个函数将整数转换为独热编码张量。它首先创建一个大小为 10 的零张量（数据集中标签的数量），然后调用 scatter_ 函数，根据标签 y 给定的索引位置赋值 value=1。
+
+```python
+target_transform = Lambda(lambda y: torch.zeros(
+    10, dtype=torch.float).scatter_(dim=0, index=torch.tensor(y), value=1))
+
+```
+
+## 4.构建神经网络
+
+神经网络由对数据执行操作的层/模块组成。torch.nn 命名空间提供了构建自己的神经网络所需的所有构建块。PyTorch 中的每个模块都继承自 nn.Module。神经网络本身就是一个由其他模块（层）组成的模块。这种嵌套结构使得构建和管理复杂的架构变得容易。
+
+在接下来的部分，我们将构建一个神经网络来分类 FashionMNIST 数据集中的图像。
+
+```python
+import os
+import torch
+from torch import nn
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
+
+```
+
+### 4.1获取用于训练的设备
+
+我们希望能够在加速器上训练我们的模型，例如 CUDA、MPS、MTIA 或 XPU。如果当前加速器可用，我们将使用它。否则，我们使用 CPU。
+
+### 神经网络 (Neural Networks)基础
 
 PyTorch 提供了 torch.nn 模块来构建神经网络
 
@@ -691,7 +747,7 @@ print(net)
 
 ```
 
-### 1.5 训练神经网络
+### 训练神经网络
 
 ```python
 import torch.optim as optim
@@ -721,43 +777,7 @@ for epoch in range(5):  # 多次循环数据集
     print(f'Epoch {epoch + 1}, Loss: {loss.item()}')
 ```
 
-### 1.6 数据加载与处理
-
-PyTorch 提供了 torch.utils.data 模块来处理数据：
-
-```python
-
-from torch.utils.data import Dataset, DataLoader
-
-# 自定义数据集
-class CustomDataset(Dataset):
-    def __init__(self, data, labels, transform=None):
-        self.data = data
-        self.labels = labels
-        self.transform = transform
-    
-    def __len__(self):
-        return len(self.data)
-    
-    def __getitem__(self, idx):
-        sample = self.data[idx]
-        label = self.labels[idx]
-        
-        if self.transform:
-            sample = self.transform(sample)
-            
-        return sample, label
-
-# 创建数据集和数据加载器
-dataset = CustomDataset(data, labels)
-dataloader = DataLoader(dataset, batch_size=4, shuffle=True)
-
-# 使用数据加载器
-for batch_idx, (data, labels) in enumerate(dataloader):
-    print(f'Batch {batch_idx}, Data shape: {data.shape}, Labels shape: {labels.shape}')
-```
-
-### 1.7 GPU 加速
+### GPU 加速
 
 PyTorch 支持 GPU 加速，只需将张量或模型移动到 GPU 上：
 
@@ -774,7 +794,7 @@ inputs, labels = inputs.to(device), labels.to(device)
 
 ```
 
-### 1.8 模型保存与加载
+### 模型保存与加载
 
 ```python
 # 保存模型
