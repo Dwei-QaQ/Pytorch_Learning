@@ -452,6 +452,204 @@ n: [2. 2. 2. 2. 2.]
 
 ```
 
+## 2.数据集 & DataLoaders
+
+处理数据样本的代码可能会变得杂乱且难以维护；理想情况下，我们希望将数据集代码与模型训练代码解耦，以提高可读性和模块化。PyTorch 提供了两种数据原语：torch.utils.data.DataLoader 和 torch.utils.data.Dataset，它们允许您使用预加载的数据集以及您自己的数据。Dataset 存储样本及其对应的标签，而 DataLoader 则在 Dataset 周围封装了一个迭代器，以便于访问样本。
+
+PyTorch 领域库提供了许多预加载的数据集（例如 FashionMNIST），这些数据集继承自 torch.utils.data.Dataset 并实现了特定于特定数据的功能。它们可用于原型设计和模型基准测试。
+
+ [图像数据集](https://pytorch.ac.cn/vision/stable/datasets.html)
+
+ [文本数据集](https://pytorch.ac.cn/text/stable/datasets.html)
+
+ [音频数据集](https://pytorch.ac.cn/audio/stable/datasets.html)
+
+### 2.1 加载数据集
+
+这是一个从 TorchVision 加载 Fashion-MNIST 数据集的示例。Fashion-MNIST 是一个包含 Zalando 商品图像的数据集，由 60,000 个训练样本和 10,000 个测试样本组成。每个样本包含一个 28×28 的灰度图像和来自 10 个类别之一的关联标签。
+
+我们使用以下参数加载 FashionMNIST Dataset
+
+   -root 是训练/测试数据存储的路径，
+
+   -train 指定训练或测试数据集，
+
+   -download=True 会在 root 路径下数据不存在时从互联网下载。
+
+   -transform 和 target_transform 指定特征和标签变换
+
+```python
+import torch    #导入 PyTorch 深度学习框架，提供张量操作和神经网络功能
+from torch.utils.data import Dataset    #导入数据集基类，用于自定义数据集
+from torchvision import datasets        #导入计算机视觉专用数据集模块，包含多种预定义数据集
+from torchvision.transforms import ToTensor     #导入图像转换工具，将 PIL 图像或 NumPy 数组转换为 PyTorch 张量 (Tensor)
+import matplotlib.pyplot as plt     #导入 Matplotlib 绘图库，用于数据可视化
+
+
+training_data = datasets.FashionMNIST(
+    root="data",
+    train=True,
+    download=True,
+    transform=ToTensor()
+)
+
+test_data = datasets.FashionMNIST(
+    root="data",
+    train=False,
+    download=True,
+    transform=ToTensor()
+)
+
+```
+
+### 2.2 迭代和可视化数据集
+
+我们可以像列表一样手动索引 Datasets：training_data[index]。我们使用 matplotlib 来可视化训练数据中的一些样本。
+
+```python
+labels_map = {
+    0: "T-Shirt",
+    1: "Trouser",
+    2: "Pullover",
+    3: "Dress",
+    4: "Coat",
+    5: "Sandal",
+    6: "Shirt",
+    7: "Sneaker",
+    8: "Bag",
+    9: "Ankle Boot",
+}
+figure = plt.figure(figsize=(8, 8))     #创建一个 8×8 英寸的图像窗口
+cols, rows = 3, 3       #设置为 3 行 3 列的网格，共显示 9 个样本
+for i in range(1, cols * rows + 1):     #循环显示样本
+    sample_idx = torch.randint(len(training_data), size=(1,)).item()    #生成随机索引，用于从训练集中随机选择样本
+    img, label = training_data[sample_idx]      #通过索引获取图像数据和对应的标签
+    figure.add_subplot(rows, cols, i)   #在网格中添加子图
+    plt.title(labels_map[label])        #设置子图标题为类别名称
+    plt.axis("off")     #关闭坐标轴显示
+    plt.imshow(img.squeeze(), cmap="gray")      #显示图像，squeeze()用于去除维度为 1 的维度，cmap="gray"指定灰度色彩映射
+plt.show()      #显示创建的图像窗口
+
+```
+
+输出示例：
+
+### 2.3 为您的文件创建自定义数据集
+
+自定义 Dataset 类必须实现三个函数：__init__、__len__ 和 __getitem__。请看这个实现；FashionMNIST 图像存储在目录 img_dir 中，而它们的标签则单独存储在 CSV 文件 annotations_file 中。
+
+在接下来的部分，我们将详细介绍这些函数中的每一个。
+
+```python
+import os
+import pandas as pd
+from torchvision.io import read_image
+
+class CustomImageDataset(Dataset):
+    def __init__(self, annotations_file, img_dir, transform=None, target_transform=None):
+        self.img_labels = pd.read_csv(annotations_file)
+        self.img_dir = img_dir
+        self.transform = transform
+        self.target_transform = target_transform
+
+    def __len__(self):
+        return len(self.img_labels)
+
+    def __getitem__(self, idx):
+        img_path = os.path.join(self.img_dir, self.img_labels.iloc[idx, 0])
+        image = read_image(img_path)
+        label = self.img_labels.iloc[idx, 1]
+        if self.transform:
+            image = self.transform(image)
+        if self.target_transform:
+            label = self.target_transform(label)
+        return image, label
+
+```
+
+#### 2.3.1 __init__
+
+__init__ 函数在实例化 Dataset 对象时运行一次。我们初始化包含图像的目录、标注文件以及两个变换（将在下一节详细介绍）。
+
+labels.csv 文件如下所示
+
+```bash
+tshirt1.jpg, 0
+tshirt2.jpg, 0
+......
+ankleboot999.jpg, 9
+
+```
+
+```python
+def __init__(self, annotations_file, img_dir, transform=None, target_transform=None):
+    self.img_labels = pd.read_csv(annotations_file)
+    self.img_dir = img_dir
+    self.transform = transform
+    self.target_transform = target_transform
+
+```
+
+#### 2.3.2 __len__
+
+__len__ 函数返回数据集中样本的数量。
+
+```python
+def __len__(self):
+    return len(self.img_labels)
+
+```
+
+#### 2.3.3 __getitem__
+
+__getitem__ 函数加载并返回给定索引 idx 处的数据集样本。根据索引，它确定图像在磁盘上的位置，使用 read_image 将其转换为张量，从 self.img_labels 中的 csv 数据检索相应标签，对其调用变换函数（如果适用），并以元组形式返回张量图像和相应标签。
+
+labels.csv 文件如下所示
+
+```python
+def __getitem__(self, idx):
+    img_path = os.path.join(self.img_dir, self.img_labels.iloc[idx, 0])
+    image = read_image(img_path)
+    label = self.img_labels.iloc[idx, 1]
+    if self.transform:
+        image = self.transform(image)
+    if self.target_transform:
+        label = self.target_transform(label)
+    return image, label
+
+```
+
+### 2.4 使用 DataLoaders 准备数据进行训练
+
+Dataset 一次检索一个样本的数据集特征和标签。在训练模型时，我们通常希望以“迷你批量”的形式传递样本，在每个 epoch 重新打乱数据以减少模型过拟合，并使用 Python 的 multiprocessing 来加速数据检索。
+
+DataLoader 是一个迭代器，它通过简单的 API 为我们抽象了这种复杂性。
+
+```python
+from torch.utils.data import DataLoader
+
+train_dataloader = DataLoader(training_data, batch_size=64, shuffle=True)
+test_dataloader = DataLoader(test_data, batch_size=64, shuffle=True)
+
+```
+
+### 2.5 遍历 DataLoader
+
+我们已将数据集加载到 DataLoader 中，并可以根据需要遍历数据集。下面的每次迭代都会返回一批 train_features 和 train_labels（分别包含 batch_size=64 个特征和标签）。因为我们指定了 shuffle=True，所以在遍历所有批量后，数据会被打乱（如需对数据加载顺序进行更精细的控制，请参阅采样器 (Samplers)）。
+
+```python
+# Display image and label.
+train_features, train_labels = next(iter(train_dataloader))
+print(f"Feature batch shape: {train_features.size()}")
+print(f"Labels batch shape: {train_labels.size()}")
+img = train_features[0].squeeze()
+label = train_labels[0]
+plt.imshow(img, cmap="gray")
+plt.show()
+print(f"Label: {label}")
+
+```
+
 ### 1.6 神经网络 (Neural Networks)基础
 
 PyTorch 提供了 torch.nn 模块来构建神经网络
@@ -490,6 +688,7 @@ class Net(nn.Module):
 
 net = Net()
 print(net)
+
 ```
 
 ### 1.5 训练神经网络
