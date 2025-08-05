@@ -664,8 +664,9 @@ Lambda 变换应用任何用户定义的 lambda 函数。在这里，我们定�
 ```python
 target_transform = Lambda(lambda y: torch.zeros(
     10, dtype=torch.float).scatter_(dim=0, index=torch.tensor(y), value=1))
-
 ```
+
+dim 参数指示值必须沿哪个维度求和为 1。
 
 ## 4.构建神经网络
 
@@ -909,6 +910,134 @@ Layer: linear_relu_stack.4.weight | Size: torch.Size([10, 512]) | Values : tenso
        device='cuda:0', grad_fn=<SliceBackward0>) 
 ```
 
+## 5.自动微分
+
+训练神经网络时，最常用的算法是反向传播。在该算法中，根据损失函数相对于给定参数的梯度来调整参数（模型权重）。
+
+为了计算这些梯度，PyTorch 内置了一个称为 torch.autograd 的微分引擎。它支持对任何计算图自动计算梯度。
+
+考虑最简单的单层神经网络，输入为 x，参数为 w 和 b，以及某个损失函数。它可以通过以下方式在 PyTorch 中定义：
+
+```python
+import torch
+
+x = torch.ones(5)  # input tensor
+y = torch.zeros(3)  # expected output
+w = torch.randn(5, 3, requires_grad=True)
+b = torch.randn(3, requires_grad=True)
+z = torch.matmul(x, w)+b
+loss = torch.nn.functional.binary_cross_entropy_with_logits(z, y)
+```
+
+### 5.1 张量、函数与计算图
+
+此代码定义了以下计算图
+
+![ ](https://pytorch.ac.cn/tutorials/_images/comp-graph.png "计算图")
+
+在这个网络中，w 和 b 是参数，我们需要对其进行优化。因此，我们需要能够计算损失函数相对于这些变量的梯度。为此，我们将这些张量的 requires_grad 属性设置为 True。
+
+你可以在创建张量时设置 requires_grad 的值，也可以稍后使用 x.requires_grad_(True) 方法设置。
+
+我们应用于张量以构建计算图的函数实际上是 Function 类的一个对象。此对象知道如何执行函数在前向方向的计算，以及如何在反向传播步骤中计算其导数。对反向传播函数的引用存储在张量的 grad_fn 属性中。你可以在文档中找到更多关于 Function 的信息。
+
+```python
+print(f"Gradient function for z = {z.grad_fn}")
+print(f"Gradient function for loss = {loss.grad_fn}")
+```
+
+输出：
+
+```bash
+Gradient function for z = <AddBackward0 object at 0x78a849aa0eb0>
+Gradient function for loss = <BinaryCrossEntropyWithLogitsBackward0 object at 0x78a849aa0eb0>
+```
+
+### 5.2 计算梯度
+
+为了优化神经网络中的参数权重，我们需要计算损失函数相对于参数的导数，即在某些固定值 x 和 y 下，我们需要计算偏导$\frac{\partial loss}{\partial w}$和$\frac{\partial loss}{\partial b}$。要计算这些导数，我们调用 loss.backward()，然后从 w.grad 和 b.grad 中检索值。
+
+```python
+loss.backward()
+print(w.grad)
+print(b.grad)
+```
+
+输出：
+
+```bash
+tensor([[0.0200, 0.1894, 0.3316],
+        [0.0200, 0.1894, 0.3316],
+        [0.0200, 0.1894, 0.3316],
+        [0.0200, 0.1894, 0.3316],
+        [0.0200, 0.1894, 0.3316]])
+tensor([0.0200, 0.1894, 0.3316])
+```
+
+我们只能获取计算图叶子节点的 grad 属性，这些叶子节点的 requires_grad 属性设置为 True。对于图中所有其他节点，梯度将不可用。
+
+出于性能考虑，我们只能在给定图上使用 backward 进行一次梯度计算。如果我们需要在同一个图上进行多次 backward 调用，我们需要将 retain_graph=True 传递给 backward 调用。
+
+### 5.3 禁用梯度跟踪
+
+默认情况下，所有 requires_grad=True 的张量都会跟踪其计算历史并支持梯度计算。然而，有些情况下我们不需要这样做，例如，当我们训练完模型并只想将其应用于某些输入数据时，即我们只想通过网络进行前向计算。我们可以通过将我们的计算代码放在 torch.no_grad() 块中来停止跟踪计算。
+
+```python
+z = torch.matmul(x, w)+b
+print(z.requires_grad)
+
+with torch.no_grad():
+    z = torch.matmul(x, w)+b
+print(z.requires_grad)
+```
+
+输出：
+
+```bash
+True
+False
+```
+
+实现相同结果的另一种方法是对张量使用 detach() 方法。
+
+```python
+z = torch.matmul(x, w)+b
+z_det = z.detach()
+print(z_det.requires_grad)
+```
+
+输出：
+
+```bash
+False
+```
+
+你可能希望禁用梯度跟踪的原因包括：
+
+   -将神经网络中的某些参数标记为冻结参数。
+
+   -当你只进行前向传播时，加快计算速度，因为不对梯度进行跟踪的张量上的计算会更高效。
+
+### 5.4 更多关于计算图的信息
+
+从概念上讲，autograd 记录了数据（张量）和所有执行的操作（以及由此产生的新张量），形成一个由 Function 对象组成的有向无环图 (DAG)。在这个 DAG 中，叶子节点是输入张量，根节点是输出张量。通过从根节点追溯到叶子节点，你可以使用链式法则自动计算梯度。
+
+在前向传播中，autograd 同时完成两件事：
+
+   -运行请求的操作以计算结果张量
+
+   -在 DAG 中维护操作的梯度函数。
+
+当在 DAG 的根节点上调用 .backward() 时，反向传播启动。autograd 随后：
+
+   -计算每个 .grad_fn 的梯度，
+
+   -将它们累加到对应张量的 .grad 属性中
+
+   -使用链式法则，一直传播到叶子张量。
+
+DAG 在 PyTorch 中是动态的 需要注意的一点是，图是每次都从头开始重建的；在每次 .backward() 调用之后，autograd 开始填充一个新图。这正是允许你在模型中使用控制流语句的原因；如果需要，你可以在每次迭代中改变形状、大小和操作。
+
 ### 训练神经网络
 
 ```python
@@ -937,6 +1066,15 @@ for epoch in range(5):  # 多次循环数据集
     
     # 打印统计信息
     print(f'Epoch {epoch + 1}, Loss: {loss.item()}')
+
+import torch
+
+x = torch.ones(5)  # input tensor
+y = torch.zeros(3)  # expected output
+w = torch.randn(5, 3, requires_grad=True)
+b = torch.randn(3, requires_grad=True)
+z = torch.matmul(x, w)+b
+loss = torch.nn.functional.binary_cross_entropy_with_logits(z, y)
 ```
 
 ### GPU 加速
