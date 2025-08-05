@@ -159,7 +159,6 @@ Device tensor is stored on: cpu
 # We move our tensor to the current accelerator if available
 if torch.accelerator.is_available():
     tensor = tensor.to(torch.accelerator.current_accelerator())
-    
 ```
 
 #### 1.4.1 标准的 NumPy 式索引和切片
@@ -171,7 +170,6 @@ print(f"First column: {tensor[:, 0]}")
 print(f"Last column: {tensor[..., -1]}")
 tensor[:,1] = 0
 print(tensor)
-
 ```
 
 输出：
@@ -184,7 +182,6 @@ tensor([[1., 0., 1., 1.],
         [1., 0., 1., 1.],
         [1., 0., 1., 1.],
         [1., 0., 1., 1.]])
-        
 ```
 
 #### 1.4.2 连接张量
@@ -194,7 +191,6 @@ tensor([[1., 0., 1., 1.],
 ```python
 t1 = torch.cat([tensor, tensor, tensor], dim=1)
 print(t1)
-
 ```
 
 输出：
@@ -204,7 +200,6 @@ tensor([[1., 0., 1., 1., 1., 0., 1., 1., 1., 0., 1., 1.],
         [1., 0., 1., 1., 1., 0., 1., 1., 1., 0., 1., 1.],
         [1., 0., 1., 1., 1., 0., 1., 1., 1., 0., 1., 1.],
         [1., 0., 1., 1., 1., 0., 1., 1., 1., 0., 1., 1.]])
-
 ```
 
 ```bash
@@ -227,7 +222,6 @@ Example:
              -1.0969, -0.4614],
             [-0.1034, -0.5790,  0.1497, -0.1034, -0.5790,  0.1497, -0.1034,
              -0.5790,  0.1497]])
-
 ```
 
 torch.stack连接
@@ -235,7 +229,6 @@ torch.stack连接
 ```python
 t2 = torch.stack([tensor, tensor, tensor], dim=1)
 print(t2)
-
 ```
 
 输出：
@@ -257,7 +250,6 @@ tensor([[[1., 0., 1., 1.],
          [1., 0., 1., 1.],
          [1., 0., 1., 1.]]])
 //与torch.cat相比这个会增加维度
-
 ```
 
 #### 1.4.3 算数运算
@@ -280,7 +272,6 @@ z2 = tensor.mul(tensor)
 z3 = torch.rand_like(tensor)
 torch.mul(tensor, tensor, out=z3)
 print(f"{z1} \n{z2} \n{z3} \n ")
-
 ```
 
 输出：
@@ -311,7 +302,6 @@ tensor([[1., 0., 1., 1.],
         [1., 0., 1., 1.],
         [1., 0., 1., 1.],
         [1., 0., 1., 1.]]) 
-
 ```
 
 #### 1.4.4 单元素张量
@@ -322,14 +312,12 @@ tensor([[1., 0., 1., 1.],
 agg = tensor.sum()
 agg_item = agg.item()
 print(agg_item, type(agg_item))
-
 ```
 
 输出：
 
 ```bash
 12.0 <class 'float'>
-
 ```
 
 #### 1.4.5 就地操作
@@ -355,7 +343,6 @@ tensor([[6., 5., 6., 6.],
         [6., 5., 6., 6.],
         [6., 5., 6., 6.],
         [6., 5., 6., 6.]])
-
 ```
 
 就地操作节省了一些内存，但在计算导数时可能会有问题，因为会立即丢失历史记录。因此，不建议使用它们。
@@ -377,7 +364,6 @@ a = torch.randn(4, 4)
 b = a.view(16)                      # 将 a 的形状改变为 (16,)
 c = a.view(-1, 8)                   # -1 表示自动计算该维度大小
 print(f"{a} \n{b} \n{c} \n ")
-
 ```
 
 输出：
@@ -400,7 +386,6 @@ tensor([-0.8745,  0.5820, -0.2385, -0.7005,  0.4052,  1.9969, -0.0108,  0.9123,
         -1.3900, -1.4591,  0.7331,  0.3289, -0.4143,  1.4008,  0.1410,  1.3530]) 
 tensor([[-0.8745,  0.5820, -0.2385, -0.7005,  0.4052,  1.9969, -0.0108,  0.9123],
         [-1.3900, -1.4591,  0.7331,  0.3289, -0.4143,  1.4008,  0.1410,  1.3530]]) 
-
 ```
 
 ### 1.5 与 NumPy 的桥接
@@ -414,7 +399,6 @@ t = torch.ones(5)
 print(f"t: {t}")
 n = t.numpy()
 print(f"n: {n}")
-
 ```
 
 输出：
@@ -422,7 +406,6 @@ print(f"n: {n}")
 ```bash
 t: tensor([1., 1., 1., 1., 1.])
 n: [1. 1. 1. 1. 1.]
-
 ```
 
 张量中的改变会反映在 NumPy 数组中。
@@ -432,7 +415,6 @@ n: [1. 1. 1. 1. 1.]
 ```python
 n = np.ones(5)
 t = torch.from_numpy(n)
-
 ```
 
 NumPy 数组中的改变会反映在张量中。
@@ -441,7 +423,6 @@ NumPy 数组中的改变会反映在张量中。
 np.add(n, 1, out=n)
 print(f"t: {t}")
 print(f"n: {n}")
-
 ```
 
 输出：
@@ -449,7 +430,6 @@ print(f"n: {n}")
 ```bash
 t: tensor([2., 2., 2., 2., 2.], dtype=torch.float64)
 n: [2. 2. 2. 2. 2.]
-
 ```
 
 ## 2.数据集 & DataLoaders
@@ -536,7 +516,7 @@ plt.show()      #显示创建的图像窗口
 
 ### 2.3 为您的文件创建自定义数据集
 
-自定义 Dataset 类必须实现三个函数：__init__、__len__ 和 __getitem__。请看这个实现；FashionMNIST 图像存储在目录 img_dir 中，而它们的标签则单独存储在 CSV 文件 annotations_file 中。
+自定义 Dataset 类必须实现三个函数：\_\_init__、\_\_len__ 和 \_\_getitem__。请看这个实现；FashionMNIST 图像存储在目录 img_dir 中，而它们的标签则单独存储在 CSV 文件 annotations_file 中。
 
 在接下来的部分，我们将详细介绍这些函数中的每一个。
 
@@ -567,9 +547,9 @@ class CustomImageDataset(Dataset):
 
 ```
 
-#### 2.3.1 __init__
+#### 2.3.1 \_\_init__
 
-__init__ 函数在实例化 Dataset 对象时运行一次。我们初始化包含图像的目录、标注文件以及两个变换（将在下一节详细介绍）。
+\_\_init__ 函数在实例化 Dataset 对象时运行一次。我们初始化包含图像的目录、标注文件以及两个变换（将在下一节详细介绍）。
 
 labels.csv 文件如下所示
 
@@ -590,9 +570,9 @@ def __init__(self, annotations_file, img_dir, transform=None, target_transform=N
 
 ```
 
-#### 2.3.2 __len__
+#### 2.3.2 \_\_len__
 
-__len__ 函数返回数据集中样本的数量。
+\_\_len__ 函数返回数据集中样本的数量。
 
 ```python
 def __len__(self):
@@ -600,9 +580,9 @@ def __len__(self):
 
 ```
 
-#### 2.3.3 __getitem__
+#### 2.3.3 \_\_getitem__
 
-__getitem__ 函数加载并返回给定索引 idx 处的数据集样本。根据索引，它确定图像在磁盘上的位置，使用 read_image 将其转换为张量，从 self.img_labels 中的 csv 数据检索相应标签，对其调用变换函数（如果适用），并以元组形式返回张量图像和相应标签。
+\_\_getitem__ 函数加载并返回给定索引 idx 处的数据集样本。根据索引，它确定图像在磁盘上的位置，使用 read_image 将其转换为张量，从 self.img_labels 中的 csv 数据检索相应标签，对其调用变换函数（如果适用），并以元组形式返回张量图像和相应标签。
 
 labels.csv 文件如下所示
 
@@ -702,49 +682,231 @@ from torchvision import datasets, transforms
 
 ```
 
-### 4.1获取用于训练的设备
+### 4.1 获取用于训练的设备
 
 我们希望能够在加速器上训练我们的模型，例如 CUDA、MPS、MTIA 或 XPU。如果当前加速器可用，我们将使用它。否则，我们使用 CPU。
 
-### 神经网络 (Neural Networks)基础
+```python
+device = torch.accelerator.current_accelerator().type if torch.accelerator.is_available() else "cpu"
+print(f"Using {device} device")
+```
 
-PyTorch 提供了 torch.nn 模块来构建神经网络
+在配置了cuda环境后可以显示：
+
+```bash
+Using cuda device
+```
+
+### 4.2 定义类
+
+我们通过继承 nn.Module 来定义我们的神经网络，并在 \_\_ init__ 中初始化神经网络层。每个 nn.Module 子类都在 forward 方法中实现对输入数据的操作。
 
 ```python
-import torch.nn as nn
-import torch.nn.functional as F
-
-class Net(nn.Module):
+class NeuralNetwork(nn.Module): #定义了名为NeuralNetwork的类，继承自 PyTorch 的nn.Module基类
     def __init__(self):
-        super(Net, self).__init__()
-        # 1 个输入图像通道，6 个输出通道，3x3 卷积核
-        self.conv1 = nn.Conv2d(1, 6, 3)
-        self.conv2 = nn.Conv2d(6, 16, 3)
-        # 全连接层
-        self.fc1 = nn.Linear(16 * 6 * 6, 120)  # 6*6 是图像维度
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
-    
+        super().__init__()  # 初始化父类nn.Module
+        self.flatten = nn.Flatten()  # 展平层定义
+        self.linear_relu_stack = nn.Sequential(  # 序列式网络结构
+            nn.Linear(28*28, 512),  # 输入层：28×28=784维 → 512维
+            nn.ReLU(),              # ReLU激活函数
+            nn.Linear(512, 512),    # 隐藏层：512维 → 512维
+            nn.ReLU(),              # ReLU激活函数
+            nn.Linear(512, 10),     # 输出层：512维 → 10维
+    )
+
     def forward(self, x):
-        # 最大池化 (2,2) 窗口
-        x = F.max_pool2d(F.relu(self.conv1(x)), (2, 2))
-        x = F.max_pool2d(F.relu(self.conv2(x)), 2)
-        x = x.view(-1, self.num_flat_features(x))
-        x = F.relu(self.fc1(x))
-        x = F.relu(self.fc2(x))
-        x = self.fc3(x)
-        return x
-    
-    def num_flat_features(self, x):
-        size = x.size()[1:]  # 除批量维度外的所有维度
-        num_features = 1
-        for s in size:
-            num_features *= s
-        return num_features
+    x = self.flatten(x)          # 展平输入张量
+    logits = self.linear_relu_stack(x)  # 通过全连接网络
+    return logits                # 返回原始输出分数(未经过softmax)
+```
 
-net = Net()
-print(net)
+我们创建 NeuralNetwork 的一个实例，并将其移动到 device，然后打印其结构。
 
+```python
+model = NeuralNetwork().to(device)
+print(model)
+```
+
+输出：
+
+```bash
+NeuralNetwork(
+  (flatten): Flatten(start_dim=1, end_dim=-1)
+  (linear_relu_stack): Sequential(
+    (0): Linear(in_features=784, out_features=512, bias=True)
+    (1): ReLU()
+    (2): Linear(in_features=512, out_features=512, bias=True)
+    (3): ReLU()
+    (4): Linear(in_features=512, out_features=10, bias=True)
+  )
+)
+```
+
+要使用模型，我们将输入数据传递给它。这将执行模型的 forward 方法，以及一些后台操作。不要直接调用 model.forward()！
+
+在输入上调用模型会返回一个二维张量，其中 dim=0 对应于每个类别的 10 个原始预测值，dim=1 对应于每个输出的单个值。通过将其传递给 nn.Softmax 模块的一个实例，我们可以获得预测概率。dim 参数表示值必须沿哪个维度求和为 1。
+
+```python
+X = torch.rand(1, 28, 28, device=device)
+logits = model(X)
+pred_probab = nn.Softmax(dim=1)(logits)
+y_pred = pred_probab.argmax(1)
+print(f"Predicted class: {y_pred}")
+```
+
+输出：
+
+```bash
+Predicted class: tensor([6], device='cuda:0')
+```
+
+### 4.3 模型层
+
+让我们分解 FashionMNIST 模型中的层。为了说明这一点，我们将取一个 3 张 28x28 尺寸图像的样本小批量，并查看它通过网络时发生的变化。
+
+```python
+input_image = torch.rand(3,28,28)
+print(input_image.size())
+```
+
+输出：
+
+```bash
+torch.Size([3, 28, 28])
+```
+
+#### 4.3.1 nn.Flatten
+
+我们初始化 nn.Flatten 层，将每张 2D 28x28 图像转换为包含 784 个像素值的连续数组（小批量维度（dim=0）被保留）。
+
+```python
+flatten = nn.Flatten()
+flat_image = flatten(input_image)
+print(flat_image.size())
+```
+
+输出：
+
+```bash
+torch.Size([3, 784])
+```
+
+#### 4.3.2 nn.Linear
+
+线性层是一个使用其存储的权重和偏置对输入应用线性变换的模块。
+
+```python
+layer1 = nn.Linear(in_features=28*28, out_features=20)
+hidden1 = layer1(flat_image)
+print(hidden1.size())
+```
+
+输出：
+
+```bash
+torch.Size([3, 20])
+```
+
+#### 4.3.3 nn.ReLU
+
+非线性激活层在模型的输入和输出之间创建复杂的映射。它们在线性变换之后应用，以引入非线性，帮助神经网络学习各种现象。
+
+在此模型中，我们在线性层之间使用 nn.ReLU，但还有其他激活函数可以在模型中引入非线性。
+
+```python
+print(f"Before ReLU: {hidden1}\n\n")
+hidden1 = nn.ReLU()(hidden1)
+print(f"After ReLU: {hidden1}")
+```
+
+```bash
+Before ReLU: tensor([[ 0.2901, -0.0419, -0.4242,  0.4214, -0.0256,  0.1765, -0.0505,  0.0774,
+          0.1546, -0.3323,  0.2471,  0.0810,  0.0872, -0.2698, -0.1555,  0.2408,
+          0.2148, -0.0473,  0.1200,  0.3072],
+        [ 0.4119, -0.1023, -0.1870,  0.3657, -0.1041,  0.1881,  0.2143,  0.5162,
+          0.3975, -0.4295,  0.1336,  0.0949,  0.0736, -0.1902, -0.5618,  0.2341,
+          0.1901, -0.1224,  0.2775,  0.5580],
+        [ 0.4820,  0.2787, -0.3580,  0.5412,  0.1555,  0.2166,  0.0193,  0.2851,
+          0.5649, -0.0321,  0.0851, -0.1493,  0.0353, -0.1425, -0.4309,  0.0231,
+         -0.1037, -0.0754, -0.0939,  0.3784]], grad_fn=<AddmmBackward0>)
+
+
+After ReLU: tensor([[0.2901, 0.0000, 0.0000, 0.4214, 0.0000, 0.1765, 0.0000, 0.0774, 0.1546,
+         0.0000, 0.2471, 0.0810, 0.0872, 0.0000, 0.0000, 0.2408, 0.2148, 0.0000,
+         0.1200, 0.3072],
+        [0.4119, 0.0000, 0.0000, 0.3657, 0.0000, 0.1881, 0.2143, 0.5162, 0.3975,
+         0.0000, 0.1336, 0.0949, 0.0736, 0.0000, 0.0000, 0.2341, 0.1901, 0.0000,
+         0.2775, 0.5580],
+        [0.4820, 0.2787, 0.0000, 0.5412, 0.1555, 0.2166, 0.0193, 0.2851, 0.5649,
+         0.0000, 0.0851, 0.0000, 0.0353, 0.0000, 0.0000, 0.0231, 0.0000, 0.0000,
+         0.0000, 0.3784]], grad_fn=<ReluBackward0>)
+```
+
+#### 4.3.4 nn.Sequential
+
+nn.Sequential 是模块的有序容器。数据按定义的相同顺序通过所有模块。可以使用顺序容器快速构建网络，例如 seq_modules。
+
+```python
+seq_modules = nn.Sequential(
+    flatten,
+    layer1,
+    nn.ReLU(),
+    nn.Linear(20, 10)
+)
+input_image = torch.rand(3,28,28)
+logits = seq_modules(input_image)
+```
+
+#### 4.3.5 nn.Softmax
+
+神经网络的最后一个线性层返回 logits - 位于 [-infty, infty] 的原始值 - 然后传递给 nn.Softmax 模块。Logits 被缩放到 [0, 1] 的值，表示模型对每个类别的预测概率。dim 参数指示值必须沿哪个维度求和为 1。
+
+```python
+softmax = nn.Softmax(dim=1)
+pred_probab = softmax(logits)
+```
+
+### 4.4 模型参数
+
+神经网络内部的许多层都是\*参数化\*的，即拥有在训练期间优化的相关权重和偏置。继承 nn.Module 会自动跟踪模型对象内部定义的所有字段，并通过模型的 parameters() 或 named_parameters() 方法使所有参数可访问。
+
+在此示例中，我们遍历每个参数，并打印其大小和值的预览。
+
+```python
+print(f"Model structure: {model}\n\n")
+
+for name, param in model.named_parameters():
+    print(f"Layer: {name} | Size: {param.size()} | Values : {param[:2]} \n")
+```
+
+```bash
+Model structure: NeuralNetwork(
+  (flatten): Flatten(start_dim=1, end_dim=-1)
+  (linear_relu_stack): Sequential(
+    (0): Linear(in_features=784, out_features=512, bias=True)
+    (1): ReLU()
+    (2): Linear(in_features=512, out_features=512, bias=True)
+    (3): ReLU()
+    (4): Linear(in_features=512, out_features=10, bias=True)
+  )
+)
+
+
+Layer: linear_relu_stack.0.weight | Size: torch.Size([512, 784]) | Values : tensor([[ 0.0086, -0.0113,  0.0069,  ..., -0.0022, -0.0021,  0.0081],
+        [ 0.0065, -0.0093, -0.0350,  ...,  0.0059,  0.0218,  0.0346]],
+       device='cuda:0', grad_fn=<SliceBackward0>) 
+
+Layer: linear_relu_stack.0.bias | Size: torch.Size([512]) | Values : tensor([-0.0094, -0.0320], device='cuda:0', grad_fn=<SliceBackward0>) 
+
+Layer: linear_relu_stack.2.weight | Size: torch.Size([512, 512]) | Values : tensor([[-0.0229,  0.0003, -0.0418,  ...,  0.0155, -0.0376,  0.0316],
+        [-0.0135, -0.0401,  0.0377,  ..., -0.0144,  0.0202,  0.0073]],
+       device='cuda:0', grad_fn=<SliceBackward0>) 
+
+Layer: linear_relu_stack.2.bias | Size: torch.Size([512]) | Values : tensor([-0.0386,  0.0300], device='cuda:0', grad_fn=<SliceBackward0>) 
+
+Layer: linear_relu_stack.4.weight | Size: torch.Size([10, 512]) | Values : tensor([[ 0.0190,  0.0182, -0.0429,  ..., -0.0202,  0.0352, -0.0211],
+        [-0.0437, -0.0164,  0.0374,  ...,  0.0201, -0.0381,  0.0375]],
+       device='cuda:0', grad_fn=<SliceBackward0>) 
 ```
 
 ### 训练神经网络
