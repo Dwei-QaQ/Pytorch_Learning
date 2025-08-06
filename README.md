@@ -1038,43 +1038,174 @@ False
 
 DAG 在 PyTorch 中是动态的 需要注意的一点是，图是每次都从头开始重建的；在每次 .backward() 调用之后，autograd 开始填充一个新图。这正是允许你在模型中使用控制流语句的原因；如果需要，你可以在每次迭代中改变形状、大小和操作。
 
-### 训练神经网络
+## 6.优化模型参数
+
+现在我们已经有了模型和数据，是时候通过优化模型的参数来训练、验证和测试模型了。训练模型是一个迭代过程；在每次迭代中，模型都会对输出进行预测，计算预测的误差（损失），收集误差相对于模型参数的导数（正如我们在上一节中看到的那样），并使用梯度下降来优化这些参数。要更详细地了解这个过程，可以看看 3Blue1Brown 关于反向传播的视频。
+
+我们加载前面关于数据集与数据加载器和构建模型的代码。
 
 ```python
-import torch.optim as optim
-
-# 创建网络、损失函数和优化器
-net = Net()
-criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
-
-# 假设我们有一些训练数据
-# inputs 是输入数据，labels 是标签
-inputs = torch.randn(1, 1, 32, 32)
-labels = torch.randn(1, 10)
-
-# 训练循环
-for epoch in range(5):  # 多次循环数据集
-    # 前向传播
-    outputs = net(inputs)
-    loss = criterion(outputs, labels)
-    
-    # 反向传播和优化
-    optimizer.zero_grad()  # 清零梯度缓存
-    loss.backward()        # 反向传播
-    optimizer.step()       # 更新参数
-    
-    # 打印统计信息
-    print(f'Epoch {epoch + 1}, Loss: {loss.item()}')
-
 import torch
+from torch import nn
+from torch.utils.data import DataLoader
+from torchvision import datasets
+from torchvision.transforms import ToTensor
 
-x = torch.ones(5)  # input tensor
-y = torch.zeros(3)  # expected output
-w = torch.randn(5, 3, requires_grad=True)
-b = torch.randn(3, requires_grad=True)
-z = torch.matmul(x, w)+b
-loss = torch.nn.functional.binary_cross_entropy_with_logits(z, y)
+# 下载并加载训练数据集
+training_data = datasets.FashionMNIST(
+    root="data",           # 数据存储路径
+    train=True,            # 是否为训练集
+    download=True,         # 若本地无数据则下载
+    transform=ToTensor()   # 图像转换为Tensor
+)
+
+# 下载并加载测试数据集
+test_data = datasets.FashionMNIST(
+    root="data",
+    train=False,           # 是否为测试集
+    download=True,
+    transform=ToTensor()
+)
+
+# 创建训练数据加载器
+train_dataloader = DataLoader(training_data, batch_size=64)
+# 创建测试数据加载器
+test_dataloader = DataLoader(test_data, batch_size=64)
+
+# 定义神经网络结构
+class NeuralNetwork(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.flatten = nn.Flatten()  # 展平输入
+        self.linear_relu_stack = nn.Sequential(
+            nn.Linear(28*28, 512),   # 全连接层，输入784，输出512
+            nn.ReLU(),               # 激活函数
+            nn.Linear(512, 512),     # 全连接层
+            nn.ReLU(),
+            nn.Linear(512, 10),      # 输出层，10类
+        )
+
+    def forward(self, x):
+        x = self.flatten(x)              # 展平
+        logits = self.linear_relu_stack(x) # 前向传播
+        return logits
+
+model = NeuralNetwork()  # 实例化模型
+```
+
+### 6.1 超参数
+
+超参数是可调节的参数，允许你控制模型的优化过程。不同的超参数值会影响模型的训练速度和收敛率（有关超参数调优的更多信息）。
+
+我们为训练定义以下超参数
+
+   -训练轮数 (Epochs) - 遍历数据集的次数，
+
+   -批量大小 (Batch Size) - 在更新参数之前通过网络传播的数据样本数量
+
+   -学习率 (Learning Rate) - 在每个批量/训练轮中更新模型参数的幅度。较小的值会产生较慢的学习速度，而较大的值可能导致训练期间出现不可预测的行为。
+
+```python
+learning_rate = 1e-3     # 学习率
+batch_size = 64          # 批大小
+epochs = 5               # 训练轮数
+```
+
+### 6.2 优化循环
+
+设置好超参数后，我们就可以通过优化循环来训练和优化模型。优化循环的每次迭代称为一个训练轮 (epoch)。
+
+每个训练轮包含两个主要部分
+
+   -训练循环 - 遍历训练数据集并尝试收敛到最优参数。
+
+   -验证/测试循环 - 遍历测试数据集，检查模型性能是否正在提高。
+
+让我们简要熟悉一下训练循环中使用的一些概念。
+
+### 6.3 损失函数
+
+当给定一些训练数据时，我们未经训练的网络很可能无法给出正确答案。损失函数衡量得到的结果与目标值之间的差异程度，我们希望在训练过程中最小化损失函数。为了计算损失，我们使用给定数据样本的输入进行预测，并将其与真实数据标签值进行比较。
+
+常见的损失函数包括用于回归任务的nn.MSELoss（均方误差）和用于分类任务的nn.NLLLoss（负对数似然）。nn.CrossEntropyLoss 结合了 nn.LogSoftmax 和 nn.NLLLoss。
+
+我们将模型的输出 logits 传递给 nn.CrossEntropyLoss，它将对 logits 进行归一化并计算预测误差。
+
+```python
+# 初始化损失函数
+loss_fn = nn.CrossEntropyLoss()
+```
+
+### 6.4 优化器
+
+优化是调整模型参数以在每个训练步骤中减少模型误差的过程。优化算法定义了如何执行此过程（在此示例中，我们使用随机梯度下降）。所有优化逻辑都封装在 optimizer 对象中。在这里，我们使用 SGD 优化器；此外，PyTorch 中还有许多不同的优化器可用，例如 ADAM 和 RMSProp，它们适用于不同类型的模型和数据。
+
+我们通过注册需要训练的模型参数并传入学习率超参数来初始化优化器。
+
+```python
+# 初始化优化器
+optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
+```
+
+在训练循环中，优化过程分为三个步骤
+
+   -调用 optimizer.zero_grad() 来重置模型参数的梯度。梯度默认会累积；为了防止重复计算，我们在每次迭代时显式地将它们归零。
+
+   -调用 loss.backward() 进行预测损失的反向传播。PyTorch 会计算损失相对于每个参数的梯度。
+
+   -得到梯度后，我们调用 optimizer.step() 根据反向传播中收集到的梯度来调整参数。
+
+### 6.5 完整实现
+
+我们定义了循环执行优化代码的 train_loop 和根据测试数据评估模型性能的 test_loop。
+
+```python
+# 训练循环
+def train_loop(dataloader, model, loss_fn, optimizer):
+    size = len(dataloader.dataset)   # 数据集大小
+    model.train()                    # 设置为训练模式
+    for batch, (X, y) in enumerate(dataloader):
+        pred = model(X)              # 前向传播，预测
+        loss = loss_fn(pred, y)      # 计算损失
+
+        loss.backward()              # 反向传播
+        optimizer.step()             # 更新参数
+        optimizer.zero_grad()        # 梯度清零
+
+        if batch % 100 == 0:         # 每100个batch打印一次损失
+            loss, current = loss.item(), batch * batch_size + len(X)
+            print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
+
+# 测试循环
+def test_loop(dataloader, model, loss_fn):
+    model.eval()                     # 设置为评估模式
+    size = len(dataloader.dataset)
+    num_batches = len(dataloader)
+    test_loss, correct = 0, 0
+
+    with torch.no_grad():            # 测试时不计算梯度
+        for X, y in dataloader:
+            pred = model(X)
+            test_loss += loss_fn(pred, y).item()  # 累加损失
+            correct += (pred.argmax(1) == y).type(torch.float).sum().item() # 统计正确数量
+
+    test_loss /= num_batches         # 平均损失
+    correct /= size                  # 准确率
+    print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
+```
+
+我们初始化损失函数和优化器，并将其传递给 train_loop 和 test_loop。你可以随意增加训练轮数来跟踪模型性能的提升。
+
+```python
+loss_fn = nn.CrossEntropyLoss()
+optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
+
+epochs = 10
+for t in range(epochs):
+    print(f"Epoch {t+1}\n-------------------------------")
+    train_loop(train_dataloader, model, loss_fn, optimizer)  # 训练
+    test_loop(test_dataloader, model, loss_fn)               # 测试
+print("Done!")
 ```
 
 ### GPU 加速
